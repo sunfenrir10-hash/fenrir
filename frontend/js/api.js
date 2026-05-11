@@ -1,5 +1,6 @@
 // 后端 API 封装
-window.MINGK_API_BASE = window.MINGK_API_BASE || "http://127.0.0.1:8000";
+// 生产环境使用相对路径（同域），本地开发可手动设 window.MINGK_API_BASE = "http://127.0.0.1:8000"
+window.MINGK_API_BASE = window.MINGK_API_BASE || "";
 
 const API = {
   base: window.MINGK_API_BASE,
