@@ -1,0 +1,6 @@
+pyproject.toml
+_pyproject.toml
+tests/
+*.pyc
+__pycache__
+.env
