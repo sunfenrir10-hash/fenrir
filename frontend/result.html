@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>命运回测 · MINGK</title>
+<meta property="og:type" content="website" />
+<meta property="og:title" content="人生K线图 · 我的命运回测" />
+<meta property="og:description" content="120 字股评师式命理短卡 · 看看你是哪一只" />
+<meta property="og:image" content="https://mingk.vercel.app/og-image.png" />
+<meta property="og:url" content="https://mingk.vercel.app/result" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://mingk.vercel.app/og-image.png" />
+<link rel="stylesheet" href="css/main.css" />
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="page result">
+
+  <header class="result__head">
+    <div>
+      <div class="result__title-row">
+        <span id="badge" class="badge-personality">
+          <span class="badge-personality__emoji" id="badge-emoji">📈</span>
+          <span class="badge-personality__name" id="badge-name">蓝筹白马股</span>
+        </span>
+        <span class="kicker kicker--up" id="ticker-code">MINGK · 100Y</span>
+      </div>
+      <h1 class="result__title" id="result-title">我的命运 K 线</h1>
+    </div>
+    <div class="result__stats" id="stats"></div>
+  </header>
+
+  <div id="city-notice" class="city-notice hidden"></div>
+
+  <section class="chart-card">
+    <div class="chart-card__head">
+      <span class="pair" id="pair-name">USR.001 · LIFE/100Y</span>
+      <div class="right">
+        <span>MA10 <span style="color:#c8a85a">●</span></span>
+        <span>MA30 <span style="color:#5a8ac8">●</span></span>
+        <span class="up" id="red-cnt">RED 0</span>
+        <span class="down" id="green-cnt">GREEN 0</span>
+      </div>
+    </div>
+    <div id="chart" class="chart-host"></div>
+  </section>
+
+  <section class="narrative">
+    <div class="narrative__main">
+      <div class="narrative__kicker">/ ANALYST&nbsp;NOTE &nbsp; · &nbsp; AI 股评师</div>
+      <p class="narrative__text" id="narrative">--</p>
+      <div class="narrative__tagline" id="tagline">--</div>
+    </div>
+    <div class="bazi-card">
+      <div class="bazi-card__title">/ FOUR&nbsp;PILLARS &nbsp; · &nbsp; 命盘</div>
+      <div class="pillars">
+        <div class="pillar"><div class="pillar__label">年柱</div><div class="pillar__char" id="bz0">--</div></div>
+        <div class="pillar"><div class="pillar__label">月柱</div><div class="pillar__char" id="bz1">--</div></div>
+        <div class="pillar"><div class="pillar__label">日柱</div><div class="pillar__char" id="bz2">--</div></div>
+        <div class="pillar"><div class="pillar__label">时柱</div><div class="pillar__char" id="bz3">--</div></div>
+      </div>
+      <div class="bazi-meta">
+        <span>日主 <b id="dm">--</b></span>
+        <span class="strength" id="strength">--</span>
+      </div>
+      <div class="bazi-meta" style="margin-top:10px;">
+        <span>真太阳时 <b id="tst">--</b></span>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn--ghost" id="btn-share">分享</button>
+    <button class="btn btn--ghost" id="btn-save">保存图片</button>
+    <a class="btn btn--up actions__primary" href="form.html" id="btn-again">再玩一次 ↻</a>
+  </div>
+
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script src="js/chart.js"></script>
+<script>
+renderHeader();
+
+const data = Store.loadResult();
+if (!data) {
+  location.replace("form.html");
+} else {
+  render(data);
+}
+
+function render(d) {
+  // 标题与人格
+  const p = d.meta.personality;
+  document.getElementById("badge-emoji").textContent = p.emoji || "📊";
+  document.getElementById("badge-name").textContent = p.name || "未知人格";
+  document.getElementById("result-title").innerHTML =
+    `<span class="accent">${escapeHtml(p.name)}</span> · ${escapeHtml(d.title)}`;
+  document.getElementById("ticker-code").textContent = `${p.emoji} ${p.name}`;
+  document.getElementById("pair-name").textContent =
+    `MINGK.${p.id || 0}`.padEnd(8, "0") + " · LIFE/100Y";
+
+  // narrative + tagline
+  document.getElementById("narrative").textContent = d.narrative || "--";
+  document.getElementById("tagline").textContent = p.tagline ? p.tagline : "--";
+
+  // bazi
+  const bz = d.meta.bazi || [];
+  bz.forEach((c, i) => { const el = document.getElementById("bz" + i); if (el) el.textContent = c; });
+  document.getElementById("dm").textContent = d.meta.day_master || "--";
+  const strengthLabel = STRENGTH_LABEL[d.meta.strength] || d.meta.strength || "--";
+  document.getElementById("strength").textContent = strengthLabel;
+  document.getElementById("tst").textContent = d.meta.true_solar_time || "--";
+
+  // 城市识别提示
+  const notice = document.getElementById("city-notice");
+  const mt = d.meta.city_match_type;
+  const ci = d.meta.city_input || "";
+  const cu = d.meta.city_used || "";
+  if (mt === "fallback") {
+    notice.className = "city-notice city-notice--warn";
+    notice.textContent = `⚠ 未精确识别『${ci}』，已使用北京经度计算（如有偏差请改用更通用城市名，如：北京 / 上海 / 广州）`;
+  } else if (mt === "fuzzy") {
+    notice.className = "city-notice city-notice--hint";
+    notice.textContent = `i 已识别为『${cu}』（输入：${ci}），如不准请重填`;
+  } else if (mt === "alias") {
+    notice.className = "city-notice city-notice--hint";
+    notice.textContent = `i 已识别为『${cu}』（输入：${ci}）`;
+  } else {
+    notice.className = "city-notice hidden";
+  }
+
+  // 统计
+  const s = d.summary;
+  const delta = (s.end_close - s.start_close).toFixed(2);
+  const deltaPct = (((s.end_close - s.start_close) / s.start_close) * 100).toFixed(1);
+  const isUp = s.end_close >= s.start_close;
+  const stats = document.getElementById("stats");
+  stats.innerHTML = `
+    <div class="stat">
+      <div class="stat__label">起 / 终</div>
+      <div class="stat__value">
+        ${s.start_close.toFixed(2)} <span class="stat__delta">→</span>
+        <span class="${isUp ? 'up' : 'down'}">${s.end_close.toFixed(2)}</span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat__label">百年累计</div>
+      <div class="stat__value ${isUp ? 'up' : 'down'}">
+        ${isUp ? '+' : ''}${delta}
+        <span class="stat__delta">${isUp ? '+' : ''}${deltaPct}%</span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat__label">高 / 低 龄</div>
+      <div class="stat__value">
+        <span class="up">${s.max_year}</span>
+        <span class="stat__delta">/</span>
+        <span class="down">${s.min_year}</span>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat__label">均值</div>
+      <div class="stat__value">${s.avg_close.toFixed(2)}</div>
+    </div>`;
+
+  document.getElementById("red-cnt").textContent = `RED ${s.red_count}`;
+  document.getElementById("green-cnt").textContent = `GREEN ${s.green_count}`;
+
+  // 渲染 K 线
+  const chart = echarts.init(document.getElementById("chart"), null, { renderer: "canvas" });
+  chart.setOption(buildKlineOption(d.kline));
+  window.addEventListener("resize", () => chart.resize());
+}
+
+document.getElementById("btn-share").addEventListener("click", () => {
+  location.href = "share.html";
+});
+document.getElementById("btn-save").addEventListener("click", () => {
+  showToast("保存图片功能即将上线（Phase 4-2）");
+});
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>MINGK · 人生 K 线图</title>
+<meta name="description" content="输入生日 + 出生地，生成 100 年人生命运 K 线图。" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="人生K线图 · 你的命运K线长什么样？" />
+<meta property="og:description" content="120 字股评师式命理短卡，看看你是哪一只——价值龙头 / ST重组 / 妖股 / 慢牛仙股…" />
+<meta property="og:image" content="https://mingk.vercel.app/og-image.png" />
+<meta property="og:url" content="https://mingk.vercel.app/" />
+<meta property="og:site_name" content="MINGK" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="人生K线图" />
+<meta name="twitter:description" content="120 字股评师式命理短卡，看看你是哪一只" />
+<meta name="twitter:image" content="https://mingk.vercel.app/og-image.png" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="page landing">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero__index">
+      <span class="kicker">FILE&nbsp;/&nbsp;001 &nbsp;·&nbsp; LIFE_QUOTE</span>
+      <span class="kicker kicker--up">RUNTIME · 100Y</span>
+    </div>
+
+    <h1 class="hero__title">
+      人生<span class="glyph glyph--up">K</span>线<span class="small">LIFE / KLINE</span>
+    </h1>
+
+    <p class="hero__sub">
+      把你这只<span class="accent">命数股</span>做一次百年回测 ——
+      看看几岁见顶、几岁触底，<br />
+      值不值得 <b>抄底</b>，敢不敢 <b>满仓</b>。
+    </p>
+
+    <div class="hero__cta">
+      <a class="btn btn--big" href="form.html">开始推演</a>
+      <span class="hero__hint">输入生日 · 30秒生成 · 终身回放</span>
+    </div>
+  </section>
+
+  <!-- 4 个卖点（功能矩阵） -->
+  <section class="features">
+    <div class="feat">
+      <div class="feat__num">/ 01</div>
+      <div class="feat__title">百年 OHLC</div>
+      <div class="feat__desc">100 根 K 线 / 1-100 岁逐年走势 / 涨跌一目了然</div>
+    </div>
+    <div class="feat">
+      <div class="feat__num">/ 02</div>
+      <div class="feat__title">日主旺衰</div>
+      <div class="feat__desc">真太阳时 + 八字排盘 + 喜用神倍率 / 命理引擎 V1.5</div>
+    </div>
+    <div class="feat">
+      <div class="feat__num">/ 03</div>
+      <div class="feat__title">12 种人格</div>
+      <div class="feat__desc">蓝筹 / 成长股 / 妖股 / ST / 黑马 / 慢牛 ... 你是哪一只</div>
+    </div>
+    <div class="feat">
+      <div class="feat__num">/ 04</div>
+      <div class="feat__title">AI 股评师</div>
+      <div class="feat__desc">120 字精炼总结 / 带行话 / 可分享朋友圈</div>
+    </div>
+  </section>
+
+  <!-- 样例人格预览 -->
+  <section class="samples">
+    <div class="samples__title">/ INSTRUMENT&nbsp;PROFILES &nbsp;—&nbsp; 12 种 K 线人格</div>
+    <div class="samples__grid" id="samples-grid">
+      <div class="sample-card sample-card--skeleton">加载中...</div>
+    </div>
+  </section>
+
+  <!-- 底部 CTA 重复 -->
+  <section class="hero" style="border-bottom:none; padding-bottom:0;">
+    <p class="hero__sub" style="margin-top:0;">
+      命运不是玄学，是一条<span class="accent">未平仓的多空线</span>。
+    </p>
+    <div class="hero__cta">
+      <a class="btn btn--big btn--up" href="form.html">立即开仓 · 看你的 K 线</a>
+    </div>
+  </section>
+
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script>
+renderHeader();
+
+// 12 种人格静态兜底（与 src/personality.py 完全一致），后端可访问时再覆盖
+const PERSONALITIES_FALLBACK = [
+  {id:1,  name:"价值龙头",   emoji:"👑", tagline:"30 岁达到大多数人 50 岁高度，后面别浪"},
+  {id:2,  name:"长牛白马股", emoji:"🐂", tagline:"慢慢富的命，巴菲特同款"},
+  {id:3,  name:"创业板黑马", emoji:"🚀", tagline:"前半生攒经验，40 岁突然狂飙"},
+  {id:4,  name:"ST重组股",   emoji:"💊", tagline:"一记闷棍后从 ICU 爬起翻身"},
+  {id:5,  name:"逆袭黑马股", emoji:"🦋", tagline:"草根逆袭剧本"},
+  {id:6,  name:"周期股",     emoji:"🔄", tagline:"自带节奏，每 10 年一次牛熊"},
+  {id:7,  name:"妖股",       emoji:"🎢", tagline:"开盘 30 收盘 90 中间 12 次跌停"},
+  {id:8,  name:"早慧股",     emoji:"🌅", tagline:"早年得志后是细水长流的自我和解"},
+  {id:9,  name:"庄股",       emoji:"🎩", tagline:"前半段韬光养晦后突然拉盘"},
+  {id:10, name:"慢牛仙股",   emoji:"🐢", tagline:"涨得不快但从不掉，命运的水电煤"},
+  {id:11, name:"守成蓝筹",   emoji:"🏛️", tagline:"不刺激，但钱本来就在"},
+  {id:12, name:"均衡白马",   emoji:"💎", tagline:"长得稳涨得稳活得稳，命理届奢侈品"},
+];
+
+function renderPersonalities(list) {
+  const grid = document.getElementById("samples-grid");
+  if (!grid) return;
+  grid.innerHTML = list.map((p, i) => `
+    <div class="sample-card">
+      <div class="sample__no">/ ${String(p.id).padStart(2, "0")}</div>
+      <div class="sample__emoji">${p.emoji || "📊"}</div>
+      <div class="sample__name">${p.name}</div>
+      <div class="sample__tag">${p.tagline || ""}</div>
+    </div>`).join("");
+}
+
+// 先用静态 fallback 立即渲染（避免后端不可达时空白）
+renderPersonalities(PERSONALITIES_FALLBACK);
+
+// 然后尝试从后端拉真实清单覆盖
+(async () => {
+  try {
+    const list = await API.personalities();
+    if (Array.isArray(list) && list.length === 12) {
+      renderPersonalities(list);
+    }
+  } catch (e) {
+    // 后端不通时静默用 fallback，不打扰用户
+    console.warn("personalities fetch failed, using fallback:", e.message);
+  }
+})();
+</script>
+</body>
+</html>

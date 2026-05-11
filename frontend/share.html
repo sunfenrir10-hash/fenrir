@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>分享卡片 · MINGK</title>
+<meta property="og:type" content="website" />
+<meta property="og:title" content="人生K线图 · 我的分享卡" />
+<meta property="og:description" content="120 字股评师式命理短卡 · 看看你是哪一只" />
+<meta property="og:image" content="https://mingk.vercel.app/og-image.png" />
+<meta property="og:url" content="https://mingk.vercel.app/share" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://mingk.vercel.app/og-image.png" />
+<link rel="stylesheet" href="css/main.css" />
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="share-page">
+  <div class="share-page__head">/ SHAREABLE&nbsp;CARD &nbsp; · &nbsp; 540 × 960 (9:16)</div>
+
+  <div class="share-stage">
+    <div class="share-card-540" id="share-card">
+      <div class="sc-brand">
+        <span><span class="b">MINGK</span> · 命数终端</span>
+        <span id="sc-date">2026.01.01</span>
+      </div>
+
+      <h2 class="sc-title" id="sc-title">命运回测 · <span class="accent">MINGK</span></h2>
+      <span class="sc-badge" id="sc-badge">
+        <span class="em" id="sc-em">📊</span>
+        <span id="sc-name">未生成</span>
+      </span>
+
+      <div class="sc-stats" id="sc-stats">
+        <div class="s"><div class="lbl">起 CLOSE</div><div class="val">--</div></div>
+        <div class="s"><div class="lbl">终 CLOSE</div><div class="val">--</div></div>
+        <div class="s"><div class="lbl">百年累计</div><div class="val">--</div></div>
+        <div class="s"><div class="lbl">最高龄</div><div class="val">--</div></div>
+      </div>
+
+      <div class="sc-chart" id="sc-chart"></div>
+
+      <div class="sc-narrative">
+        <span id="sc-narrative">--</span>
+        <span class="quote" id="sc-quote">--</span>
+      </div>
+
+      <div class="sc-foot">
+        <div class="sc-qr" id="sc-qr"></div>
+        <div class="right">
+          <b>MINGK.COM</b>
+          扫码生成<br/>你的人生 K 线
+        </div>
+      </div>
+
+      <div class="sc-disclaim">仅供娱乐 切勿当真，大家都有很精彩的人生！</div>
+    </div>
+  </div>
+
+  <div class="actions" style="border-top:none; padding-top:0; margin-top:8px;">
+    <a class="btn btn--ghost" href="result.html">← 返回结果</a>
+    <button class="btn btn--ghost" id="btn-download">保存为图片</button>
+    <a class="btn btn--up actions__primary" href="form.html">再玩一次 ↻</a>
+  </div>
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/chart.js"></script>
+<script>
+renderHeader();
+
+const d = Store.loadResult();
+if (!d) {
+  location.replace("form.html");
+} else {
+  renderShare(d);
+}
+
+function renderShare(d) {
+  const p = d.meta.personality;
+  document.getElementById("sc-em").textContent   = p.emoji || "📊";
+  document.getElementById("sc-name").textContent = p.name || "—";
+  document.getElementById("sc-title").innerHTML  =
+    `<span class="accent">${escapeHtml(p.name)}</span> · ${escapeHtml(d.title || "命运回测")}`;
+  document.getElementById("sc-narrative").textContent = (d.narrative || "").slice(0, 120);
+  document.getElementById("sc-quote").textContent = p.tagline || "";
+
+  // date
+  const today = new Date();
+  document.getElementById("sc-date").textContent =
+    `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2,"0")}.${String(today.getDate()).padStart(2,"0")}`;
+
+  // stats
+  const s = d.summary;
+  const isUp = s.end_close >= s.start_close;
+  const delta = (s.end_close - s.start_close).toFixed(1);
+  const closes = d.kline.map(k => k.close);
+  const hi = Math.max(...closes), lo = Math.min(...closes);
+  const stats = document.getElementById("sc-stats");
+  stats.innerHTML = `
+    <div class="s"><div class="lbl">起 CLOSE</div><div class="val">${s.start_close.toFixed(1)}</div></div>
+    <div class="s"><div class="lbl">终 CLOSE</div><div class="val ${isUp ? 'up':'down'}">${s.end_close.toFixed(1)}</div></div>
+    <div class="s"><div class="lbl">百年Δ</div><div class="val ${isUp ? 'up':'down'}">${isUp ? '+':''}${delta}</div></div>
+    <div class="s"><div class="lbl">高 / 低</div><div class="val"><span class="up">${hi.toFixed(0)}</span>/<span class="down">${lo.toFixed(0)}</span></div></div>`;
+
+  // QR (链接到 mingk.com)
+  QRCode.toCanvas(document.createElement("canvas"), "https://mingk.com", {
+    width: 64, margin: 0, color: { dark: "#0a0a0a", light: "#f5f5f0" }
+  }, (err, canvas) => {
+    if (!err) {
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      document.getElementById("sc-qr").innerHTML = "";
+      document.getElementById("sc-qr").appendChild(canvas);
+    }
+  });
+
+  // K 线（精简：去 dataZoom / 量能子图）
+  const chart = echarts.init(document.getElementById("sc-chart"), null, { renderer: "canvas", devicePixelRatio: 2 });
+  const opt = buildKlineOption(d.kline);
+  opt.grid = [{ left: 28, right: 16, top: 12, bottom: 24 }];
+  opt.xAxis = [Object.assign({}, opt.xAxis[0], { axisLabel: Object.assign({}, opt.xAxis[0].axisLabel, { fontSize: 9, interval: 19 }) })];
+  opt.yAxis = [Object.assign({}, opt.yAxis[0], { axisLabel: Object.assign({}, opt.yAxis[0].axisLabel, { fontSize: 9 }) })];
+  opt.series = opt.series.filter(s => s.name !== "VOL");
+  opt.series.forEach(s => { if (s.xAxisIndex !== undefined) s.xAxisIndex = 0; if (s.yAxisIndex !== undefined) s.yAxisIndex = 0; });
+  opt.dataZoom = [];
+  opt.tooltip = { show: false };
+  opt.animation = false;
+  chart.setOption(opt);
+  window._sc_chart = chart;
+}
+
+document.getElementById("btn-download").addEventListener("click", async () => {
+  const card = document.getElementById("share-card");
+  const btn = document.getElementById("btn-download");
+  btn.disabled = true; btn.textContent = "生成中...";
+  try {
+    // 把 ECharts canvas 内嵌为 base64 图片（html2canvas 对 ECharts canvas 支持有限）
+    if (window._sc_chart) {
+      const dataUrl = window._sc_chart.getDataURL({ pixelRatio: 2, backgroundColor: "#0a0a0a" });
+      // 替换为 img 后再渲染
+      const host = document.getElementById("sc-chart");
+      const oldHTML = host.innerHTML;
+      host.innerHTML = `<img src="${dataUrl}" style="display:block;width:100%;height:100%;object-fit:cover" />`;
+
+      const canvas = await html2canvas(card, {
+        backgroundColor: "#0a0a0a",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      host.innerHTML = oldHTML;
+      // 重新挂载图表
+      const ch = echarts.init(host, null, { renderer: "canvas", devicePixelRatio: 2 });
+      ch.setOption(window._sc_chart.getOption());
+      window._sc_chart = ch;
+
+      const link = document.createElement("a");
+      const slug = (d.meta.personality && d.meta.personality.name || "mingk").replace(/[^\w\u4e00-\u9fa5]+/g, "-");
+      link.download = `mingk-${slug}-${Date.now()}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      showToast("已生成 PNG · 检查浏览器下载");
+    }
+  } catch (e) {
+    showToast("生成失败：" + e.message, 3000);
+  } finally {
+    btn.disabled = false; btn.textContent = "保存为图片";
+  }
+});
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, m => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[m]));
+}
+</script>
+</body>
+</html>

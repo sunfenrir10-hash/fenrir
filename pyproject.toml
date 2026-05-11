@@ -1,0 +1,25 @@
+[project]
+name = "mingk"
+version = "0.1.0"
+description = "人生 K 线图 - 命理 + 金融 K 线可视化后端算法"
+requires-python = ">=3.10"
+dependencies = [
+    "lunar-python>=1.4.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

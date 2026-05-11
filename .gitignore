@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+sample_*.json
+*.egg-info/
+dist/
+build/
+# secrets
+.env
+.env.*
+*.key
+*secret*
+phase3_audit_*.json

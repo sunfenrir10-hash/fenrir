@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>演算中 · MINGK</title>
+<meta property="og:type" content="website" />
+<meta property="og:title" content="人生K线图 · 演算中" />
+<meta property="og:image" content="https://mingk.vercel.app/og-image.png" />
+<meta property="og:url" content="https://mingk.vercel.app/waiting" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://mingk.vercel.app/og-image.png" />
+<link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<div id="site-header"></div>
+
+<main class="ritual">
+  <div class="ritual__phase-num" id="phase-num">/ PHASE 1 / 4</div>
+  <h1 class="ritual__phase-title" id="phase-title">排盘中</h1>
+  <div class="ritual__phase-sub" id="phase-sub">庄家筹码集结中...</div>
+
+  <div class="ritual__stage" id="stage"></div>
+
+  <div class="ritual__progress" id="prog">
+    <div class="seg" style="--dur:2.2s"></div>
+    <div class="seg" style="--dur:2.5s"></div>
+    <div class="seg" style="--dur:2.5s"></div>
+    <div class="seg" style="--dur:2.5s"></div>
+  </div>
+  <div class="ritual__taglines" id="ticker">> ENGINE LOCKED · BAZI VENDOR · MOCK_OK</div>
+</main>
+
+<script src="js/utils.js"></script>
+<script src="js/api.js"></script>
+<script>
+renderHeader();
+
+const form = Store.loadForm();
+if (!form) { location.replace("form.html"); }
+
+const stage = document.getElementById("stage");
+const phaseNum = document.getElementById("phase-num");
+const phaseTitle = document.getElementById("phase-title");
+const phaseSub = document.getElementById("phase-sub");
+const segs = document.querySelectorAll("#prog .seg");
+
+// 启动 fetch（与动画并行，最快不早于 8.5s 跳）
+const t0 = Date.now();
+let apiResult = null, apiError = null;
+const apiPromise = API.chart(form)
+  .then(d => { apiResult = d; })
+  .catch(e => { apiError = e; });
+
+// 4 阶段定义
+const PHASES = [
+  {
+    num: "/ PHASE 1 / 4",
+    title: "排盘中",
+    sub: "庄家筹码集结中…",
+    dur: 2200,
+    render: () => renderPillarsRise(),
+  },
+  {
+    num: "/ PHASE 2 / 4",
+    title: "推算大运",
+    sub: "主力建仓中…",
+    dur: 2500,
+    render: () => renderDayun(),
+  },
+  {
+    num: "/ PHASE 3 / 4",
+    title: "流年扫描",
+    sub: "K 线即将拉升…",
+    dur: 2500,
+    render: () => renderYearScan(),
+  },
+  {
+    num: "/ PHASE 4 / 4",
+    title: "K 线渲染",
+    sub: "出图…",
+    dur: 2500,
+    render: () => renderBarsDrop(),
+  },
+];
+
+function setPhase(idx) {
+  const p = PHASES[idx];
+  phaseNum.textContent = p.num;
+  phaseTitle.textContent = p.title;
+  phaseSub.textContent = p.sub;
+  // 进度段
+  segs.forEach((s, i) => {
+    s.classList.remove("active", "done");
+    if (i < idx) s.classList.add("done");
+    else if (i === idx) s.classList.add("active");
+  });
+  stage.innerHTML = "";
+  p.render();
+}
+
+function renderPillarsRise() {
+  // 浮现一组示例八字，真排盘后会被替换
+  const labels = ["年柱", "月柱", "日柱", "时柱"];
+  // 用形式上合理的随机干支占位
+  const tg = "甲乙丙丁戊己庚辛壬癸";
+  const dz = "子丑寅卯辰巳午未申酉戌亥";
+  const pick = () => tg[(Math.random() * 10) | 0] + dz[(Math.random() * 12) | 0];
+  const pillars = [pick(), pick(), pick(), pick()];
+
+  const html = `
+    <div>
+      <div class="pillars-rise">
+        ${labels.map((lb, i) => `
+          <div class="pcol">
+            <div class="lbl">${lb}</div>
+            <div class="ch">
+              <span class="top"    style="animation-delay:${i*0.18}s">${pillars[i][0]}</span>
+              <br/>
+              <span class="bottom" style="animation-delay:${i*0.18 + .35}s">${pillars[i][1]}</span>
+            </div>
+          </div>`).join("")}
+      </div>
+      <div class="pulse-line"></div>
+    </div>`;
+  stage.innerHTML = html;
+}
+
+function renderDayun() {
+  const tg = "甲乙丙丁戊己庚辛壬癸";
+  const dz = "子丑寅卯辰巳午未申酉戌亥";
+  const cells = [];
+  for (let i = 0; i < 10; i++) {
+    const age = i * 10 + 3;
+    const gz = tg[(i*3+1)%10] + dz[(i*5+2)%12];
+    const cls = i % 2 === 0 ? "up" : "down";
+    cells.push(`<div class="dayun-cell ${cls}"><div class="age">${age} - ${age+9} 岁</div><div class="gz">${gz}</div></div>`);
+  }
+  // 复制一份让动画无缝
+  const inner = cells.join("") + cells.join("");
+  stage.innerHTML = `<div class="dayun-track"><div class="dayun-track__inner">${inner}</div></div>`;
+}
+
+function renderYearScan() {
+  stage.innerHTML = `<div><div class="year-scan" id="year-num">1991<span class="year-scan__age">AGE 01</span></div></div>`;
+  const el = document.getElementById("year-num");
+  const baseYear = parseInt((form.birth_date || "1990-01-01").slice(0,4), 10) || 1990;
+  let i = 0;
+  const total = 100;
+  const step = setInterval(() => {
+    i++;
+    if (i > total) { clearInterval(step); return; }
+    el.firstChild.nodeValue = String(baseYear + i - 1);
+    el.querySelector(".year-scan__age").textContent = `AGE ${String(i).padStart(2,"0")}`;
+  }, 22); // 100×22ms ≈ 2.2s
+}
+
+function renderBarsDrop() {
+  // 60 根，红绿混合
+  let html = "";
+  for (let i = 0; i < 60; i++) {
+    const h = 30 + Math.random() * 70;
+    const isGreen = Math.random() < 0.42;
+    html += `<div class="bar ${isGreen ? "green" : ""}" style="height:${h}%; animation-delay:${(i*22)}ms;"></div>`;
+  }
+  stage.innerHTML = `<div class="bars-drop">${html}</div>`;
+}
+
+// 阶段循环 — 总时长约 9.7s
+async function runRitual() {
+  for (let i = 0; i < PHASES.length; i++) {
+    setPhase(i);
+    await new Promise(r => setTimeout(r, PHASES[i].dur));
+  }
+  segs.forEach(s => { s.classList.remove("active"); s.classList.add("done"); });
+
+  // 等 API
+  await apiPromise;
+  if (apiError) {
+    phaseTitle.textContent = "网络错误";
+    phaseSub.textContent = apiError.message;
+    showToast("演算失败：" + apiError.message + "，请重试", 3000);
+    setTimeout(() => location.replace("form.html"), 2400);
+    return;
+  }
+  Store.saveResult(apiResult);
+  // 用真排盘替换 phase-1 的随机字符（如果用户回看，效果更扎实）
+  location.replace("result.html");
+}
+
+// 检查 prefers-reduced-motion，做 fallback
+if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  // 简化：只显示文字 + 进度条，跳过 stage 渲染
+  PHASES.forEach(p => p.render = () => { stage.innerHTML = '<div style="font-family:var(--font-mono);color:var(--fg-2);font-size:13px">' + p.sub + '</div>'; });
+}
+
+if (form) runRitual();
+</script>
+</body>
+</html>
