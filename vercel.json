@@ -1,32 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "framework": null,
-  "buildCommand": "",
-  "installCommand": "pip install -r requirements.txt",
-  "outputDirectory": "frontend",
-  "functions": {
-    "api/index.py": {
-      "maxDuration": 60,
-      "memory": 1024,
-      "includeFiles": "src/**"
-    }
-  },
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/healthz", "destination": "/api/index" },
-    { "source": "/form", "destination": "/form.html" },
-    { "source": "/waiting", "destination": "/waiting.html" },
-    { "source": "/result", "destination": "/result.html" },
-    { "source": "/share", "destination": "/share.html" }
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "frontend/**", "use": "@vercel/static" }
   ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
-    }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/healthz", "dest": "/api/index.py" },
+    { "src": "/form", "dest": "/frontend/form.html" },
+    { "src": "/waiting", "dest": "/frontend/waiting.html" },
+    { "src": "/result", "dest": "/frontend/result.html" },
+    { "src": "/share", "dest": "/frontend/share.html" },
+    { "src": "/(.*)", "dest": "/frontend/$1" }
   ]
 }
