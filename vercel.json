@@ -1,17 +1,3 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "builds": [
-    { "src": "api/index.py", "use": "@vercel/python" },
-    { "src": "frontend/**", "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/healthz", "dest": "/api/index.py" },
-    { "src": "/form", "dest": "/frontend/form.html" },
-    { "src": "/waiting", "dest": "/frontend/waiting.html" },
-    { "src": "/result", "dest": "/frontend/result.html" },
-    { "src": "/share", "dest": "/frontend/share.html" },
-    { "src": "/(.*)", "dest": "/frontend/$1" }
-  ]
+  "version": 2
 }
