@@ -1,8 +1,16 @@
 {
   "version": 2,
-  "rewrites": [
-    { "source": "/healthz", "destination": "/api/index.py" },
-    { "source": "/api/(.*)", "destination": "/api/index.py" }
+  "builds": [
+    { "src": "api/index.py", "use": "@vercel/python" },
+    { "src": "frontend/**", "use": "@vercel/static" }
   ],
-  "outputDirectory": "frontend"
+  "routes": [
+    { "src": "/healthz", "dest": "/api/index.py" },
+    { "src": "/api/(.*)", "dest": "/api/index.py" },
+    { "src": "/form", "dest": "/frontend/form.html" },
+    { "src": "/waiting", "dest": "/frontend/waiting.html" },
+    { "src": "/result", "dest": "/frontend/result.html" },
+    { "src": "/share", "dest": "/frontend/share.html" },
+    { "src": "/(.*)", "dest": "/frontend/$1" }
+  ]
 }
