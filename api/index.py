@@ -1,16 +1,36 @@
-"""Vercel Serverless Function 入口。
-
-Vercel 自动识别 api/index.py 的 `app` 变量为 ASGI 应用并路由所有 /api/* 流量。
-"""
+"""Vercel Serverless Function 入口 — 含完整 FastAPI app。"""
 import sys
 import os
 
-# 确保项目根目录在 Python path 中，让 src.* 和 api.* 都能正常 import
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# 项目根目录加入 Python path
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
 
-from api.main import app  # noqa: F401
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-# 允许 `python api/index.py` 本地直跑做冒烟
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=False)
+app = FastAPI()
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok", "debug": "minimal_test", "root": ROOT, "path": sys.path[:3]}
+
+# 尝试导入 src 模块，如果失败返回错误信息
+try:
+    from src.cities import CITIES, resolve_city
+    from src.pipeline import pipeline
+    from src.personality import PERSONALITIES
+    IMPORT_OK = True
+    IMPORT_ERR = None
+except Exception as e:
+    IMPORT_OK = False
+    IMPORT_ERR = str(e)
+
+@app.get("/healthz/imports")
+def healthz_imports():
+    return {"import_ok": IMPORT_OK, "error": IMPORT_ERR, "cities_count": len(CITIES) if IMPORT_OK else 0}
+
+@app.get("/api/healthz")
+def api_healthz():
+    return {"status": "ok", "import_ok": IMPORT_OK, "error": IMPORT_ERR}
